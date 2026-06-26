@@ -17,7 +17,10 @@ export default function MailSandbox({ leads, onActionTriggered }) {
     if (!selectedLead) return;
     setTriggeringOpen(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const API_BASE = import.meta.env.VITE_API_URL || 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? 'http://localhost:5000' 
+          : 'https://ai-tech-intern.onrender.com');
       const pixelUrl = `${API_BASE}/api/track/open/${selectedLead._id}?t=${Date.now()}`;
       await fetch(pixelUrl, { cache: 'no-store' });
       setOpenTriggered(true);
@@ -33,7 +36,10 @@ export default function MailSandbox({ leads, onActionTriggered }) {
   // Construct Mock Email HTML (matches Nodemailer template)
   const getMockEmailHtml = (lead) => {
     if (!lead) return '';
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const API_BASE = import.meta.env.VITE_API_URL || 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000' 
+        : 'https://ai-tech-intern.onrender.com');
     const trackingPixelUrl = `${API_BASE}/api/track/open/${lead._id}`;
     const trackingClickUrl = `${API_BASE}/api/track/click/${lead._id}`;
     return `
@@ -158,7 +164,7 @@ export default function MailSandbox({ leads, onActionTriggered }) {
                   </button>
 
                   <a 
-                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/track/click/${selectedLead._id}`} 
+                    href={`${import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'https://ai-tech-intern.onrender.com')}/api/track/click/${selectedLead._id}`} 
                     target="_blank" 
                     rel="noreferrer"
                     className="btn-action"

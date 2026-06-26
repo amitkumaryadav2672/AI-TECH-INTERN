@@ -33,7 +33,10 @@ export default function LeadForm({ onSubmitSuccess }) {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const API_BASE = import.meta.env.VITE_API_URL || 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? 'http://localhost:5000' 
+          : 'https://ai-tech-intern.onrender.com');
       const response = await fetch(`${API_BASE}/api/leads`, {
         method: 'POST',
         headers: {
