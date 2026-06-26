@@ -2,11 +2,27 @@ const nodemailer = require('nodemailer');
 
 let transporter = null;
 
-// Initialize mail transporter (uses Ethereal Email for local testing and real email rendering)
+// Initialize mail transporter (prefers Gmail App Password, falls back to Ethereal)
 async function getTransporter() {
   if (transporter) return transporter;
 
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (emailUser && emailPass && emailUser !== 'yourgmail@gmail.com') {
+    console.log(`[Email Service] EMAIL_USER and EMAIL_PASS detected. Configuring Gmail SMTP...`);
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass, // Google 16-character App Password
+      },
+    });
+    return transporter;
+  }
+
   try {
+    console.log('[Email Service] Gmail SMTP credentials not configured. Using free Ethereal Email fallback...');
     // Generate a test SMTP service account from ethereal.email
     const testAccount = await nodemailer.createTestAccount();
     console.log(`[Email Service] Ethereal test account created successfully: User: ${testAccount.user}`);
@@ -14,10 +30,10 @@ async function getTransporter() {
     transporter = nodemailer.createTransport({
       host: testAccount.smtp.host,
       port: testAccount.smtp.port,
-      secure: testAccount.smtp.secure, // true for 465, false for other ports
+      secure: testAccount.smtp.secure,
       auth: {
-        user: testAccount.user, // generated ethereal user
-        pass: testAccount.pass, // generated ethereal password
+        user: testAccount.user,
+        pass: testAccount.pass,
       },
     });
 
@@ -36,11 +52,12 @@ async function sendAutomatedEmail(lead) {
     const mailTransporter = await getTransporter();
 
     // Define host (use localhost:5000 for backend endpoints)
-    const backendHost = `http://localhost:${process.env.PORT || 5000}`;
-    const frontendHost = 'http://localhost:5173'; // Vite React dev server
-
+    const backendHost = process.env.VITE_API_URL || `http://localhost:${process.env.PORT || 5000}`;
     const trackingPixelUrl = `${backendHost}/api/track/open/${lead._id}`;
     const trackingClickUrl = `${backendHost}/api/track/click/${lead._id}`;
+
+    // Sender details dynamic based on transporter config
+    const sender = process.env.EMAIL_USER || '"Lead Tracker System" <no-reply@leadtracker.com>';
 
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #ffffff; color: #1a202c;">
@@ -75,17 +92,21 @@ async function sendAutomatedEmail(lead) {
     `;
 
     const mailOptions = {
-      from: '"Lead Tracker System" <no-reply@leadtracker.com>',
+      from: sender,
       to: lead.email,
       subject: `Inquiry Received - ${lead.name}`,
       html: htmlContent,
     };
 
     const info = await mailTransporter.sendMail(mailOptions);
-    const previewUrl = nodemailer.getTestMessageUrl(info);
+    
+    // Ethereal URLs only exist for test accounts
+    const previewUrl = process.env.EMAIL_USER ? '' : nodemailer.getTestMessageUrl(info);
 
     console.log(`[Email Service] Email sent successfully for lead ${lead._id}`);
-    console.log(`[Email Service] Ethereal Preview URL: ${previewUrl}`);
+    if (previewUrl) {
+      console.log(`[Email Service] Ethereal Preview URL: ${previewUrl}`);
+    }
 
     return {
       success: true,
