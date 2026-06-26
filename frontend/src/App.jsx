@@ -5,6 +5,8 @@ import LeadForm from './components/LeadForm';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import MailSandbox from './components/MailSandbox';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [leads, setLeads] = useState([]);
@@ -28,9 +30,9 @@ export default function App() {
   // Fetch all leads
   const fetchLeads = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/leads');
+      const response = await fetch(`${API_BASE}/api/leads`);
       if (response.ok) {
-        const data = await response.ok ? await response.json() : [];
+        const data = await response.json();
         setLeads(data);
       }
     } catch (error) {
@@ -42,7 +44,7 @@ export default function App() {
   const fetchMetrics = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/analytics');
+      const response = await fetch(`${API_BASE}/api/analytics`);
       if (response.ok) {
         const data = await response.json();
         setMetrics(data);
@@ -78,7 +80,7 @@ export default function App() {
   const handleDeleteLead = async (leadId) => {
     if (!window.confirm('Are you sure you want to delete this lead?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/leads/${leadId}`, {
+      const response = await fetch(`${API_BASE}/api/leads/${leadId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
@@ -92,7 +94,7 @@ export default function App() {
   const handleResetAll = async () => {
     if (!window.confirm('CRITICAL: Are you sure you want to clear ALL lead database records? This cannot be undone.')) return;
     try {
-      const response = await fetch('http://localhost:5000/api/leads/reset', {
+      const response = await fetch(`${API_BASE}/api/leads/reset`, {
         method: 'POST',
       });
       if (response.ok) {
